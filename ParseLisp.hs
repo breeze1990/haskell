@@ -64,10 +64,16 @@ symbol = oneOf "!#$%&|*+-/:<=>?@^_~"
 spaces1 :: Parser ()
 spaces1 = skipMany1 space
 
+parseEscChar :: Parser Char
+parseEscChar = do
+    char '\\'
+    t <- char '"'
+    return t
+
 parseString :: Parser LispVal
 parseString = do
     char '"'
-    x <- many (noneOf "\"")
+    x <- many (try parseEscChar <|> noneOf "\"" )
     char '"'
     return $ String x
 

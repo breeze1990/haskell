@@ -9,12 +9,12 @@ import Control.Monad.Error
 
 initEnv :: Env
 initEnv = [("quit",Proc quit),("+",Proc add_a),("-",Proc sub_a),("define",Proc def_a),("=",Proc equ_a),("set!",Proc set),
-            ("if",Proc iff_a),("quote",Proc quo_a),("lambda",Proc lbd_a)]
+            ("if",Proc iff_a),("quote",Proc quo_a),("lambda",Proc lbd_a),("cons",Proc cons_a),("car",Proc car_a),("cdr",Proc cdr_a)]
 
 --(lambda (n) (proc))
 app_proc :: LispVal -> [LispVal] -> CalcRslt
 app_proc (Lambda fn var) args = do  oldEnv <- get
-                                    vals <- mapM eval args -- Lazy vs Strict?
+                                    vals <- mapM eval args
                                     if length var /= length vals then lift $ throwError " arguments number error. "
                                                                  else put $ updEnv var vals oldEnv
                                     nEnv <- get
@@ -43,13 +43,28 @@ lbd_a (List var:body) = do let vlst = createVarList var
                                 Just v  -> return $ Lambda body v
 lbd_a _ = lift $ throwError " bad syntax for lambda "
 
+car_a :: LispFn
+car_a (t:[]) = do arg <- eval t
+                  case arg of
+                    List (head:rst) -> return head
+                    _               -> lift $ throwError "Proc: car: error"
+car_a _      = lift $ throwError "Proc: car: error"
+
+cdr_a :: LispFn
+cdr_a (t:[]) = do arg <- eval t
+                  case arg of
+                    List (head:rst) -> return $ List rst
+                    _               -> lift $ throwError "Proc: cdr: error"
+cdr_a _      = lift $ throwError "Proc: cdr: error"
+
+cons_a  :: LispFn
+cons_a (fst:snd:[]) = do head <- eval fst
+                         tail <- eval snd
+                         cons [head,tail]
+cons_a t = cons t
+
 quo_a :: LispFn
-quo_a (String str:[]) = return $ String str
-quo_a (Bool bool:[])  = return $ Bool bool
-quo_a (Numberi i:[])  = return $ Numberi i
-quo_a (Numberf f:[])  = return $ Numberf f
-quo_a (List lst:[])   = return $ List [Atom "quote",List lst]
-quo_a (Atom atom:[])  = return $ List [Atom "quote",Atom atom]
+quo_a (t:[]) = return $ t
 quo_a _ = lift $ throwError "Proc: Quote: Arguments error"
 
 equ_a :: LispFn

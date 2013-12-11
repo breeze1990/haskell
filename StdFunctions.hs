@@ -61,3 +61,9 @@ def (Atom var:val:[]) = do oldEnv <- get
                            return $ Term "NULL"
                            
 def _ = lift $ throwError "Proc:define: arguments error"
+
+cons :: LispFn
+cons (head:List ls:[]) = case head of
+                            Term tm -> lift $ throwError "Cons: first argument error"
+                            _ -> return $ List (head:ls)
+cons _ = lift $ throwError "Cons: error"
